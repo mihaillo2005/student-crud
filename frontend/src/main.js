@@ -61,16 +61,20 @@ async function init() {
 }
 
 /**
- * Load student records from Spring Boot backend
+ * Load student records from Spring Boot backend or fallback
  */
 async function loadStudents() {
   setLoadingState(true);
   try {
-    const data = await getAllStudents();
-    students = Array.isArray(data) ? data : [];
+    const res = await getAllStudents();
+    students = Array.isArray(res.data) ? res.data : [];
     
     // Update API connection status
-    setApiStatus(true, 'Spring Boot API Connected');
+    if (res.source === 'backend') {
+      setApiStatus('online', 'Spring Boot API Connected');
+    } else {
+      setApiStatus('offline', 'Local Mode (Backend Connecting / Standby)');
+    }
     
     // Update metrics & course dropdown
     updateStats();
@@ -80,7 +84,7 @@ async function loadStudents() {
     applyFilters();
   } catch (error) {
     console.error('Failed to load students:', error);
-    setApiStatus(false, 'API Disconnected (Port 8080)');
+    setApiStatus('error', 'API Offline');
     showToast(`Could not load students: ${error.message}`, 'error');
     students = [];
     applyFilters();
@@ -450,8 +454,14 @@ function setSubmitting(isSubmitting) {
   }
 }
 
-function setApiStatus(isOnline, text) {
-  apiStatusDot.className = `w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500' : 'bg-rose-500'}`;
+function setApiStatus(status, text) {
+  if (status === 'online') {
+    apiStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+  } else if (status === 'offline') {
+    apiStatusDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+  } else {
+    apiStatusDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+  }
   apiStatusText.textContent = text;
 }
 
