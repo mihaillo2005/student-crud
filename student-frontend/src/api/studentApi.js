@@ -1,9 +1,20 @@
 /**
  * API Client for Student Endpoints
- * Communicates with the Spring Boot backend via the Vite proxy (/ladrillo/students)
+ * Supports both local development (Vite dev proxy) and Render production deployment (VITE_API_BASE_URL)
  */
 
-const BASE_URL = '/ladrillo/students';
+export function getBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) {
+    let clean = envUrl.trim().replace(/\/+$/, '');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = `https://${clean}`;
+    }
+    return `${clean}/ladrillo/students`;
+  }
+  // Local development fallback (proxied by vite.config.js to localhost:8080)
+  return '/ladrillo/students';
+}
 
 /**
  * Handle API responses and uniform error reporting
@@ -33,7 +44,8 @@ async function handleResponse(response) {
  * @returns {Promise<Array>} List of students
  */
 export async function getAllStudents() {
-  const response = await fetch(BASE_URL, {
+  const url = getBaseUrl();
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
@@ -48,7 +60,8 @@ export async function getAllStudents() {
  * @returns {Promise<Object>} Student object
  */
 export async function getStudentById(id) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const url = `${getBaseUrl()}/${id}`;
+  const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
@@ -63,7 +76,8 @@ export async function getStudentById(id) {
  * @returns {Promise<Object>} Created student
  */
 export async function createStudent(student) {
-  const response = await fetch(BASE_URL, {
+  const url = getBaseUrl();
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -81,7 +95,8 @@ export async function createStudent(student) {
  * @returns {Promise<Object>} Updated student
  */
 export async function updateStudent(id, student) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const url = `${getBaseUrl()}/${id}`;
+  const response = await fetch(url, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -98,7 +113,8 @@ export async function updateStudent(id, student) {
  * @returns {Promise<string>} Deletion response
  */
 export async function deleteStudent(id) {
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const url = `${getBaseUrl()}/${id}`;
+  const response = await fetch(url, {
     method: 'DELETE',
   });
   return handleResponse(response);
